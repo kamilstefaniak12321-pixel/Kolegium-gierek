@@ -1,0 +1,26 @@
+name: Test gry
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  multiplayer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm test
+      - name: Przygotuj przeglądarkę do testu interfejsu
+        run: |
+          npm install --prefix "$RUNNER_TEMP/kolegium-ui" --no-audit --no-fund playwright@1.56.1
+          "$RUNNER_TEMP/kolegium-ui/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Rozegraj mecz na ekranie komputera i telefonu
+        run: NODE_PATH="$RUNNER_TEMP/kolegium-ui/node_modules" node checks/browser.cjs
