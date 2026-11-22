@@ -69,6 +69,7 @@ function finishRound(room) {
   const g = room.game;
   g.phase = 'results';
   g.deadline = null;
+  g.scorers = room.players.map(({ id, name }) => ({ id, name }));
   for (const entry of g.entries) {
     if (entry.status === 'pending') {
       const votes = Object.values(entry.votes);
@@ -171,6 +172,7 @@ function act(room, player, action, data, now) {
 function playerLeft(room, id, now) {
   const g = room.game;
   if (g.phase === 'lobby') return;
+  if (g.phase === 'results' && g.number === g.settings.rounds) return;
   if (room.players.length < 2) {
     room.game = { ...fresh(), settings: g.settings };
     room.notice = 'Do dalszej gry potrzeba dwóch osób. Możesz znów zaprosić znajomych tym samym kodem.';
@@ -188,6 +190,7 @@ function view(room, viewerId) {
   return {
     phase: g.phase, settings: g.settings, number: g.number, roundId: g.roundId, deadline: g.deadline,
     letters: g.letters, finished: g.finished, reviewed: g.reviewed.includes(viewerId), totals: g.totals, gained: g.gained,
+    scorers: g.phase === 'results' ? g.scorers : undefined,
     entries: visible.map(e => ({
       id: e.id, text: e.text, unknown: e.unknown, challenged: Boolean(e.challenged), status: e.status, mine: e.author === viewerId,
       author: g.phase === 'results' ? e.author : undefined,

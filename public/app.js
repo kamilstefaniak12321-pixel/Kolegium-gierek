@@ -1,6 +1,6 @@
 import { catalog } from './catalog.js';
 import { sentenceUI } from './games/literowe-zdania.js';
-import { arrow, esc, gameArt, icon } from './ui.js';
+import { arrow, esc, icon } from './ui.js';
 
 const games = { [sentenceUI.id]: sentenceUI };
 const app = document.querySelector('#app');
@@ -72,10 +72,10 @@ function home() {
     <div class="catalog">${Object.values(catalog).map(g => `<article class="poster">
       <div class="poster-info"><div class="category"><span class="category-dot"></span>${esc(g.category)}</div>
       <h2>${esc(g.title)}</h2><p>${esc(g.summary)}</p>
-      <div class="facts"><span>${icon('people')}${g.minPlayers}–${g.maxPlayers} osób</span><span>${icon('clock')}60–120 s / runda</span></div>
+      <div class="facts"><span>${icon('people')}${g.minPlayers}–${g.maxPlayers} osób</span><span>${icon('clock')}${esc(g.timeLabel)}</span></div>
       <div class="poster-buttons"><button data-do="create" data-game="${g.id}" class="btn golden">Utwórz pokój ${arrow}</button>
         <button data-do="rules" data-game="${g.id}" class="rules-link">Zasady gry</button></div>
-      </div>${gameArt()}</article>`).join('')}</div>
+      </div>${games[g.id].artwork()}</article>`).join('')}</div>
     <section class="join-strip" id="dolacz" aria-labelledby="join-title">
       <div class="join-lead"><div class="ticket-icon" aria-hidden="true"><i></i></div>
       <div><h2 id="join-title">Masz kod pokoju?</h2><p>Wpisz kod od znajomych i dosiądź się do gry.</p></div></div>
@@ -128,8 +128,7 @@ function renderRoom(first = false) {
   const focusRadio = previous?.matches('input[type="radio"]') ? [previous.name,previous.value] : null;
   const expanded = byId('dictionary-entries')?.open;
   const selection = previous?.id === 'sentence' ? [previous.selectionStart, previous.selectionEnd] : null;
-  const title = { lobby: 'Poczekalnia', writing: 'Runda ' + g.number + ' z ' + g.settings.rounds,
-    voting: 'Ocena zdań', results: g.number === g.settings.rounds ? 'Wyniki meczu' : 'Podsumowanie rundy' }[g.phase];
+  const title = games[s.gameId].title(g);
   document.title = title + ' · Kolegium gierek';
   nav.innerHTML = '<button class="nav-link" data-do="rules">Zasady gry</button><button class="nav-link" data-do="leave-prompt">Opuść pokój</button>';
   app.innerHTML = `<div class="room-heading">

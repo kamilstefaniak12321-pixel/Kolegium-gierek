@@ -1,4 +1,5 @@
-import { arrow, avatar, disabled, esc, icon, playerList } from '../ui.js';
+import { arrow, avatar, disabled, esc, gameArt, icon, playerList } from '../ui.js';
+import { catalog } from '../catalog.js';
 
 const durationOptions = [60, 90, 120];
 const roundOptions = [1, 3, 5];
@@ -13,7 +14,7 @@ function lobby(s) {
   const host = s.me === s.hostId;
   const online = s.players.filter(p => p.online).length;
   return `<div class="room-columns">
-    <section class="panel"><div class="panel-head"><h2>Gracze przy stole</h2><span class="count">${s.players.length} / 8</span></div>
+    <section class="panel"><div class="panel-head"><h2>Gracze przy stole</h2><span class="count">${s.players.length} / ${catalog[s.gameId].maxPlayers}</span></div>
       ${playerList(s)}<p class="subtle note">${online < 2 ? 'Zaproś jeszcze jedną osobę, żeby rozpocząć.' : 'Ekipa w komplecie? Możecie już zaczynać.'}</p>
     </section>
     <section class="panel settings"><h2>Ustawienia meczu</h2>
@@ -77,7 +78,7 @@ function voting(s) {
 function results(s) {
   const g = s.game;
   const final = g.number === g.settings.rounds;
-  const ranked = [...s.players].sort((a,b) => (g.totals[b.id] || 0) - (g.totals[a.id] || 0));
+  const ranked = [...g.scorers].sort((a,b) => (g.totals[b.id] || 0) - (g.totals[a.id] || 0));
   const top = g.totals[ranked[0].id] || 0;
   const leaders = ranked.filter(p => (g.totals[p.id] || 0) === top);
   const title = top === 0 ? 'Remis bez punktów' : leaders.length > 1 ? 'Remis na szczycie!' : 'Wygrywa ' + leaders[0].name + '!';
@@ -90,7 +91,7 @@ function results(s) {
     <ol class="scores">${ranked.map((p, i) => {
       const score = g.totals[p.id] || 0;
       if (score !== lastScore) { rank = i + 1; lastScore = score; }
-      return `<li><span class="place">${rank}.</span>${avatar(s.players.findIndex(person => person.id === p.id))}
+      return `<li><span class="place">${rank}.</span>${avatar(g.scorers.findIndex(person => person.id === p.id))}
         <span class="player-name">${esc(p.name)}${p.id === s.me ? '<small> (Ty)</small>' : ''}<small>+${g.gained[p.id] || 0} w rundzie</small></span>
         <strong class="points">${score} pkt</strong></li>`;
     }).join('')}</ol>
@@ -98,7 +99,7 @@ function results(s) {
       : '<p class="note">Gospodarz może rozpocząć ' + (final ? 'rewanż.' : 'kolejną rundę.') + '</p>'}
     </section><section class="panel"><div class="panel-head"><h2>Zdania z rundy</h2><span class="count">${g.entries.length}</span></div>
     ${g.entries.length ? `<ul class="entry-list">${g.entries.map(e => `<li><strong>${esc(e.text)}</strong>
-      <span class="small subtle">${esc(s.players.find(p => p.id === e.author)?.name || 'Były gracz')}</span>
+      <span class="small subtle">${esc(g.scorers.find(p => p.id === e.author)?.name)}</span>
       <span class="entry-status ${e.status}">${e.status === 'accepted' ? '+1 pkt' : '0 pkt'} · ${e.unknown.length || e.challenged ? 'za ' + e.yes + ', przeciw ' + e.no : 'słownik'}</span></li>`).join('')}</ul>`
       : '<p class="subtle">W tej rundzie nikt nie oddał zdania.</p>'}
     </section></div>`;
@@ -106,5 +107,10 @@ function results(s) {
 
 export const sentenceUI = {
   id: 'literowe-zdania',
+  artwork: gameArt,
+  title(g) {
+    return { lobby: 'Poczekalnia', writing: 'Runda ' + g.number + ' z ' + g.settings.rounds,
+      voting: 'Ocena zdań', results: g.number === g.settings.rounds ? 'Wyniki meczu' : 'Podsumowanie rundy' }[g.phase];
+  },
   phases: { lobby, writing, voting, results },
 };

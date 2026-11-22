@@ -3,6 +3,7 @@ export const catalog = {
     id: 'literowe-zdania',
     title: 'Literowe zdania',
     category: 'Gra słowna',
+    timeLabel: '60–120 s / runda',
     summary: 'Jeden zestaw liter dla wszystkich. Kto ułoży z nich najwięcej zdań, zanim skończy się czas?',
     minPlayers: 2,
     maxPlayers: 8,

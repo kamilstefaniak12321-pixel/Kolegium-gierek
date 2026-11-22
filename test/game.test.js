@@ -118,6 +118,21 @@ test('sens zdania ze znanych słów może rozstrzygnąć grupa', () => {
   assert.equal(room.game.entries[0].status,'rejected');
 });
 
+test('wynik meczu zachowuje zwycięzcę po wyjściu gospodarza', () => {
+  const { room, players, rooms, act, start, closeWriting } = table(['Ala', 'Jan']);
+  act(0,'settings',{ seconds:60, rounds:1 });
+  start();
+  act(0,'submit',{ text:'Ala ma kota.' });
+  closeWriting();
+  act(1,'reviewed');
+  act(0,'leave');
+  const result = rooms.view(room,room.players[0]);
+  assert.equal(result.game.phase,'results');
+  assert.deepEqual(result.game.scorers.map(p => p.name),['Ala','Jan']);
+  assert.equal(result.game.totals[players[0].state.me],1);
+  assert.equal(act(1,'rematch').game.phase,'lobby');
+});
+
 test('serwer zamyka wpisy i głosy na czas, nawet bez aktywnego klienta', () => {
   const { rooms, room, act, start, elapse } = table();
   start();
