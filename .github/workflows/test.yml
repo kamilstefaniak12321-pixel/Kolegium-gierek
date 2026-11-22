@@ -1,0 +1,37 @@
+name: Test gry
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  multiplayer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm test
+      - name: Przygotuj przeglądarkę do testu interfejsu
+        run: |
+          npm install --prefix "$RUNNER_TEMP/kolegium-ui" --no-audit --no-fund playwright@1.62.1
+          if ! command -v google-chrome > /dev/null; then
+            "$RUNNER_TEMP/kolegium-ui/node_modules/.bin/playwright" install --with-deps chromium
+          fi
+      - name: Rozegraj mecz na ekranie komputera i telefonu
+        run: |
+          export CHROME_BIN="$(command -v google-chrome || true)"
+          export KG_PREVIEW_DIR="$RUNNER_TEMP/kolegium-podglad"
+          NODE_PATH="$RUNNER_TEMP/kolegium-ui/node_modules" node checks/browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: success() && github.event_name == 'pull_request'
+        with:
+          name: podglad-gry
+          path: ${{ runner.temp }}/kolegium-podglad/
+          retention-days: 3
