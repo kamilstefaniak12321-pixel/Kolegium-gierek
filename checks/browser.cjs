@@ -1,5 +1,14 @@
 const assert = require('node:assert/strict');
 const { chromium, devices } = require('playwright');
+const { mkdir } = require('node:fs/promises');
+const { join } = require('node:path');
+
+async function screenshot(page, name) {
+  const folder = process.env.KG_PREVIEW_DIR;
+  if (!folder) return;
+  await mkdir(folder, { recursive: true });
+  await page.screenshot({ path: join(folder, name), fullPage: true });
+}
 
 async function run() {
   const { createServer } = await import('../src/server.js');
@@ -9,7 +18,7 @@ async function run() {
   const origin = 'http://127.0.0.1:' + server.address().port;
   let browser;
   try {
-    browser = await chromium.launch();
+    browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined });
     const desktop = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const phone = await browser.newContext(devices['Pixel 7']);
     const host = await desktop.newPage();
@@ -24,6 +33,8 @@ async function run() {
     }
     await heading(host, 'Literowe zdania');
     await checkWidth(guest);
+    await screenshot(host, 'katalog-komputer.png');
+    await screenshot(guest, 'katalog-telefon.png');
     await button(host, 'Utwórz pokój').click();
     await host.getByLabel('Twój pseudonim').fill('Kamil');
     await button(host.locator('dialog'), 'Utwórz pokój').click();
@@ -41,6 +52,7 @@ async function run() {
     await button(host, 'Rozpocznij grę').click();
     await Promise.all([heading(host, 'Runda 1 z 1'), heading(guest, 'Runda 1 z 1')]);
     await checkWidth(guest);
+    await screenshot(guest, 'runda-telefon.png');
     const letters = await host.locator('.letter').allTextContents();
     assert.deepEqual(await guest.locator('.letter').allTextContents(), letters);
     const known = starterSentences.find(text => [...text.toUpperCase()].every(c => c === ' ' || letters.includes(c)));
